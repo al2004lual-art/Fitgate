@@ -1,0 +1,946 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  Search, MapPin, Star, ShieldCheck, MessageSquare, Calendar, 
+  Lock, Unlock, CheckCircle2, Filter, Flame, Dumbbell, UserCheck, 
+  Clock, Send, ChevronRight, Award, SlidersHorizontal, Sparkles,
+  Check, X, Building2, User, ArrowLeft
+} from 'lucide-react';
+
+// --- DATOS INICIALES DE SERVICIOS Y ENTRENADORES ---
+const INITIAL_PROVIDERS = [
+  {
+    id: 'p1',
+    name: 'Aday Morales · Calistenia & Street Workout',
+    type: 'Entrenador Personal',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    cover: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&auto=format&fit=crop&q=80',
+    zone: 'Las Canteras / Parque Romano',
+    distanceKm: 0.8,
+    rating: 4.95,
+    reviewsCount: 64,
+    verified: true,
+    credentials: 'Graduado CAFYD · Especialista en Fuerza con Peso Corporal',
+    tags: ['Calistenia', 'Funcional', 'Fuerza', 'Dominadas'],
+    priceFrom: 25,
+    bio: 'Progresiones desde cero hasta Muscle-Up, Handstand y Front Lever. Entrenamientos individuales o en grupos reducidos (máx 4 personas) al aire libre o en centro concertado.',
+    bookingUnlocked: false,
+    requestStatus: 'none',
+    services: [
+      { id: 's1', title: 'Valoración Inicial + Sesión Técnica Calistenia', duration: '60 min', price: '25€' },
+      { id: 's2', title: 'Grupo Reducido Street Workout (Bono Mensual)', duration: '60 min · 2 días/sem', price: '75€' },
+      { id: 's3', title: 'Entrenamiento Personal 1 a 1 (Progresiones)', duration: '60 min', price: '35€' }
+    ],
+    availableSlots: ['Lun 17:00', 'Lun 18:30', 'Mié 17:00', 'Jue 19:00', 'Vie 10:00']
+  },
+  {
+    id: 'p2',
+    name: 'Box Atlántico CrossFit & HYROX',
+    type: 'Centro Deportivo / Box',
+    avatar: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=300&auto=format&fit=crop&q=80',
+    cover: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80',
+    zone: 'Mesa y López / Guanarteme',
+    distanceKm: 1.4,
+    rating: 4.90,
+    reviewsCount: 142,
+    verified: true,
+    credentials: 'Centro Oficial HYROX & CrossFit L2 Coaches',
+    tags: ['CrossFit', 'HYROX', 'Halterofilia', 'Funcional'],
+    priceFrom: 15,
+    bio: 'Programación por niveles de condición física. Antes de abrirte la agenda de clases de WOD o HYROX, hablamos por chat para asignarte tu grupo de iniciación (On-Ramp) o nivel RX.',
+    bookingUnlocked: true,
+    requestStatus: 'approved',
+    services: [
+      { id: 's4', title: 'Sesión de Nivelación On-Ramp (Obligatoria nuevos)', duration: '60 min', price: '15€' },
+      { id: 's5', title: 'WOD CrossFit / HYROX Engine (Clase suelta)', duration: '60 min', price: '18€' },
+      { id: 's6', title: 'Técnica de Halterofilia (Snatch & Clean)', duration: '75 min', price: '22€' }
+    ],
+    availableSlots: ['Hoy 18:00', 'Hoy 19:00', 'Mañana 09:30', 'Mañana 17:30', 'Mañana 20:00']
+  },
+  {
+    id: 'p3',
+    name: 'Kora Studio · Pilates Reformer & Movilidad',
+    type: 'Estudio Especializado',
+    avatar: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=300&auto=format&fit=crop&q=80',
+    cover: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&auto=format&fit=crop&q=80',
+    zone: 'Triana / Vegueta',
+    distanceKm: 3.1,
+    rating: 4.88,
+    reviewsCount: 89,
+    verified: true,
+    credentials: 'Fisioterapeutas & Instructores Pilates Máquina',
+    tags: ['Pilates', 'Movilidad', 'Readaptación', 'Core'],
+    priceFrom: 28,
+    bio: 'Grupos de máximo 6 máquinas Reformer. Escríbenos por el chat comentando si tienes alguna molestia lumbar o cervical y te habilitamos el calendario de reservas del nivel adecuado.',
+    bookingUnlocked: false,
+    requestStatus: 'none',
+    services: [
+      { id: 's7', title: 'Clase Privada Valoración Postural + Reformer', duration: '50 min', price: '35€' },
+      { id: 's8', title: 'Sesión Pilates Reformer Nivel Intermedio', duration: '50 min', price: '28€' }
+    ],
+    availableSlots: ['Mar 10:00', 'Mar 18:00', 'Jue 11:00', 'Vie 17:00']
+  },
+  {
+    id: 'p4',
+    name: 'Elena Vega · Readaptación y Fuerza',
+    type: 'Entrenadora Personal',
+    avatar: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=300&auto=format&fit=crop&q=80',
+    cover: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&auto=format&fit=crop&q=80',
+    zone: 'Ciudad Jardín / Alcaravaneras',
+    distanceKm: 2.0,
+    rating: 4.98,
+    reviewsCount: 51,
+    verified: true,
+    credentials: 'Máster en Rendimiento Deportivo y Readaptación (CAFYD)',
+    tags: ['Fuerza', 'Readaptación', 'Funcional', 'Running'],
+    priceFrom: 35,
+    bio: 'Especialista en prevención de lesiones, retorno al deporte y preparación física específica para corredores (5K, 10K, Trail) y deportes de equipo.',
+    bookingUnlocked: false,
+    requestStatus: 'none',
+    services: [
+      { id: 's9', title: 'Test de Valoración Funcional y VAM / Fuerza', duration: '75 min', price: '40€' },
+      { id: 's10', title: 'Sesión Presencial Readaptación / Fuerza', duration: '60 min', price: '35€' }
+    ],
+    availableSlots: ['Lun 16:00', 'Mié 16:00', 'Mié 19:30', 'Vie 16:00']
+  },
+  {
+    id: 'p5',
+    name: 'Titan Gym Club · Sala & Funcional',
+    type: 'Gimnasio Comercial',
+    avatar: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=300&auto=format&fit=crop&q=80',
+    cover: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800&auto=format&fit=crop&q=80',
+    zone: 'Siete Palmas',
+    distanceKm: 4.5,
+    rating: 4.65,
+    reviewsCount: 210,
+    verified: true,
+    credentials: 'Centro Multidisciplinar 1.800 m² · Zona Peso Libre & Jaulas',
+    tags: ['Fuerza', 'Hipertrofia', 'Funcional', 'Boxeo'],
+    priceFrom: 10,
+    bio: 'Gimnasio comercial con sala de musculación completa, zona de calistenia indoor y entrenadores en sala. Habla con recepción o nuestro head coach por chat para activar tu pase de prueba o bono.',
+    bookingUnlocked: false,
+    requestStatus: 'none',
+    services: [
+      { id: 's11', title: 'Day Pass + Asesoramiento en Sala (1 día)', duration: 'Acceso Libre', price: '10€' },
+      { id: 's12', title: 'Planificación Personalizada en Sala con Coach', duration: '60 min', price: '28€' }
+    ],
+    availableSlots: ['Lun a Vie 07:00 - 22:30', 'Sáb 09:00 - 20:00']
+  }
+];
+
+const SPORT_TAGS = [
+  'Todos', 'Calistenia', 'CrossFit', 'Funcional', 'Pilates', 
+  'Fuerza', 'HYROX', 'Readaptación', 'Running', 'Boxeo', 'Movilidad'
+];
+
+export default function App() {
+  const [roleView, setRoleView] = useState('client');
+  const [providers, setProviders] = useState(INITIAL_PROVIDERS);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState('Todos');
+  const [sortBy, setSortBy] = useState('relevance');
+  const [providerTypeFilter, setProviderTypeFilter] = useState('Todos');
+
+  const [activeProviderId, setActiveProviderId] = useState(null);
+  const [modalTab, setModalTab] = useState('info');
+
+  const [chats, setChats] = useState({
+    p1: [
+      { sender: 'pro', text: '¡Hola! Soy Aday. Antes de abrirte la agenda de reservas, cuéntame: ¿tienes experiencia previa en calistenia o empezamos desde cero?', time: '10:15' }
+    ],
+    p2: [
+      { sender: 'pro', text: '¡Buenas! Te hemos desbloqueado ya el acceso a nuestra agenda de CrossFit y HYROX. ¡Puedes reservar cuando quieras!', time: 'Ayer' }
+    ],
+    p3: [
+      { sender: 'pro', text: '¡Hola! Bienvenido a Kora Studio. Cuéntanos si tienes alguna lesión o qué horario buscas.', time: '11:00' }
+    ],
+    p4: [
+      { sender: 'pro', text: '¡Hola! Soy Elena. Dime qué objetivo deportivo o molestia quieres trabajar.', time: '09:30' }
+    ],
+    p5: [
+      { sender: 'pro', text: '¡Hola! Escríbenos por aquí si buscas un entrenador personal de nuestro equipo.', time: '12:00' }
+    ]
+  });
+
+  const [chatInput, setChatInput] = useState('');
+  
+  const [myBookings, setMyBookings] = useState([
+    {
+      id: 'b-init',
+      providerName: 'Box Atlántico CrossFit & HYROX',
+      serviceTitle: 'WOD CrossFit / HYROX Engine (Clase suelta)',
+      slot: 'Jueves 19:00',
+      price: '18€',
+      zone: 'Mesa y López / Guanarteme'
+    }
+  ]);
+
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [bookingSuccessBanner, setBookingSuccessBanner] = useState(false);
+
+  const activeProvider = useMemo(
+    () => providers.find(p => p.id === activeProviderId) || null,
+    [providers, activeProviderId]
+  );
+
+  const filteredProviders = useMemo(() => {
+    return providers
+      .filter(p => {
+        const matchesTag = selectedTag === 'Todos' || p.tags.some(t => t.toLowerCase() === selectedTag.toLowerCase());
+        const matchesType = providerTypeFilter === 'Todos' || p.type.includes(providerTypeFilter);
+        const matchesQuery =
+          searchQuery.trim() === '' ||
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.zone.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchesTag && matchesType && matchesQuery;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'distance') {
+          return a.distanceKm - b.distanceKm;
+        }
+        const scoreA = a.rating * 20 + Math.min(a.reviewsCount, 100) * 0.1 + (a.bookingUnlocked ? 5 : 0);
+        const scoreB = b.rating * 20 + Math.min(b.reviewsCount, 100) * 0.1 + (b.bookingUnlocked ? 5 : 0);
+        return scoreB - scoreA;
+      });
+  }, [providers, selectedTag, providerTypeFilter, searchQuery, sortBy]);
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !activeProvider) return;
+
+    const newMsg = {
+      sender: 'client',
+      text: chatInput.trim(),
+      time: 'Ahora'
+    };
+
+    setChats(prev => ({
+      ...prev,
+      [activeProvider.id]: [...(prev[activeProvider.id] || []), newMsg]
+    }));
+
+    setProviders(prev =>
+      prev.map(p =>
+        p.id === activeProvider.id && !p.bookingUnlocked
+          ? { ...p, requestStatus: 'chatting' }
+          : p
+      )
+    );
+
+    setChatInput('');
+  };
+
+  const handleUnlockClientBooking = (providerId) => {
+    setProviders(prev =>
+      prev.map(p =>
+        p.id === providerId
+          ? { ...p, bookingUnlocked: true, requestStatus: 'approved' }
+          : p
+      )
+    );
+
+    const approvalMsg = {
+      sender: 'pro',
+      text: '✅ ¡Perfecto! Ya tienes desbloqueado el acceso a mi calendario de reservas. Entra en la pestaña "Reservar Cita".',
+      time: 'Ahora',
+      isSystemUnlock: true
+    };
+
+    setChats(prev => ({
+      ...prev,
+      [providerId]: [...(prev[providerId] || []), approvalMsg]
+    }));
+  };
+
+  const handleConfirmBooking = () => {
+    if (!activeProvider || !selectedService || !selectedSlot) return;
+
+    const newBooking = {
+      id: 'b-' + Date.now(),
+      providerName: activeProvider.name,
+      serviceTitle: selectedService.title,
+      slot: selectedSlot,
+      price: selectedService.price,
+      zone: activeProvider.zone
+    };
+
+    setMyBookings(prev => [newBooking, ...prev]);
+    setBookingSuccessBanner(true);
+    setTimeout(() => {
+      setBookingSuccessBanner(false);
+      setSelectedService(null);
+      setSelectedSlot(null);
+    }, 2500);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-20">
+      <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 py-3.5">
+        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Dumbbell className="w-6 h-6 text-slate-950 stroke-[2.5]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black tracking-tight text-white">
+                  Fit<span className="text-emerald-400">Gate</span>
+                </h1>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  Chat-to-Book
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Directorio de entrenadores, boxes y centros deportivos
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800">
+            <button
+              onClick={() => setRoleView('client')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                roleView === 'client'
+                  ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Search className="w-3.5 h-3.5" />
+              Modo Deportista
+            </button>
+            <button
+              onClick={() => setRoleView('pro')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                roleView === 'pro'
+                  ? 'bg-cyan-400 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              Panel Entrenador / Local
+              {providers.filter(p => p.requestStatus === 'chatting').length > 0 && (
+                <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center">
+                  {providers.filter(p => p.requestStatus === 'chatting').length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 pt-5">
+        {roleView === 'client' ? (
+          <>
+            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/50 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4" />
+                  ¿Cómo funciona FitGate?
+                </div>
+                <p className="text-sm text-slate-300">
+                  1. Filtra por disciplina · 2. Habla por Chat con el profesional · 3. Desbloquea tu acceso a reservas.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 text-xs bg-slate-950/80 px-3 py-2 rounded-xl border border-slate-800">
+                <Lock className="w-4 h-4 text-amber-400" />
+                <span className="text-slate-400">Chat previo</span>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+                <Unlock className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-300 font-semibold">Booksy</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4">
+              <div className="md:col-span-7 relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Busca 'calistenia', 'crossfit', 'pilates', zona..."
+                  className="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
+                />
+              </div>
+
+              <div className="md:col-span-5 flex items-center gap-2">
+                <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-1 flex">
+                  <button
+                    onClick={() => setSortBy('relevance')}
+                    className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      sortBy === 'relevance'
+                        ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Flame className="w-3.5 h-3.5" />
+                    Relevancia
+                  </button>
+                  <button
+                    onClick={() => setSortBy('distance')}
+                    className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      sortBy === 'distance'
+                        ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
+                    Cercanía (km)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-2">
+              {SPORT_TAGS.map(tag => {
+                const active = selectedTag === tag;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(tag)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
+                      active
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md shadow-emerald-500/20'
+                        : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    #{tag}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {filteredProviders.map(provider => (
+                <div
+                  key={provider.id}
+                  className="group bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all flex flex-col justify-between shadow-lg"
+                >
+                  <div>
+                    <div className="relative h-36 bg-slate-800 overflow-hidden">
+                      <img
+                        src={provider.cover}
+                        alt={provider.name}
+                        className="w-full h-full object-cover opacity-65 group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-800 text-[11px] font-semibold text-slate-200">
+                        {provider.type.includes('Entrenador') ? (
+                          <User className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                        )}
+                        {provider.type}
+                      </div>
+
+                      <div className="absolute top-3 right-3">
+                        {provider.bookingUnlocked ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 backdrop-blur-md">
+                            <Unlock className="w-3 h-3" /> Agenda Abierta
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-950/85 text-slate-300 border border-slate-700 backdrop-blur-md">
+                            <Lock className="w-3 h-3 text-amber-400" /> Requiere Chat
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="absolute bottom-2.5 left-3 right-3 flex items-end justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={provider.avatar}
+                            alt={provider.name}
+                            className="w-12 h-12 rounded-xl object-cover border-2 border-emerald-400 shadow-md"
+                          />
+                          <div>
+                            <h3 className="font-bold text-white text-base leading-tight flex items-center gap-1">
+                              {provider.name}
+                              {provider.verified && (
+                                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                              )}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs text-slate-300 mt-0.5">
+                              <span className="text-emerald-400 font-semibold">{provider.distanceKm} km</span>
+                              <span>·</span>
+                              <span className="truncate">{provider.zone}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400 truncate">{provider.credentials}</span>
+                        <span className="flex items-center gap-1 font-bold text-amber-400 shrink-0 ml-2">
+                          <Star className="w-3.5 h-3.5 fill-amber-400" />
+                          {provider.rating} <span className="text-slate-500 font-normal">({provider.reviewsCount})</span>
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                        {provider.bio}
+                      </p>
+
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {provider.tags.map(tag => (
+                          <span
+                            key={tag}
+                            onClick={() => setSelectedTag(tag)}
+                            className="cursor-pointer px-2 py-0.5 rounded-md bg-slate-800 text-emerald-300 text-[11px] font-semibold border border-slate-700"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-3 bg-slate-950/60 border-t border-slate-800 flex items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] uppercase text-slate-500 block">Desde</span>
+                      <span className="text-sm font-black text-white">{provider.priceFrom}€ <span className="text-xs font-normal text-slate-400">/ ses.</span></span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setActiveProviderId(provider.id);
+                          setModalTab('chat');
+                        }}
+                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-1.5 border border-slate-700"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                        Chat
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setActiveProviderId(provider.id);
+                          setModalTab(provider.bookingUnlocked ? 'booking' : 'chat');
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                          provider.bookingUnlocked
+                            ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
+                            : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30'
+                        }`}
+                      >
+                        {provider.bookingUnlocked ? (
+                          <>
+                            <Calendar className="w-3.5 h-3.5" />
+                            Reservar
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-3.5 h-3.5" />
+                            Solicitar
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {myBookings.length > 0 && (
+              <div className="mt-8 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-3">
+                  <Calendar className="w-4 h-4 text-emerald-400" />
+                  Mis Citas Deportivas Confirmadas ({myBookings.length})
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {myBookings.map(b => (
+                    <div
+                      key={b.id}
+                      className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3"
+                    >
+                      <div>
+                        <span className="text-xs font-bold text-emerald-400 block">{b.slot}</span>
+                        <h4 className="text-sm font-bold text-white">{b.providerName}</h4>
+                        <p className="text-xs text-slate-400">{b.serviceTitle}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-black text-white block">{b.price}</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 className="w-3 h-3" /> OK
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="space-y-6">
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-cyan-950/60 via-slate-900 to-slate-900 border border-cyan-500/30">
+              <h2 className="text-lg font-black text-white flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-cyan-400" />
+                Panel de Control de Entrenadores / Centros (Estilo Booksy)
+              </h2>
+              <p className="text-xs text-slate-300 mt-1">
+                Gestiona los chats y pulsa <strong className="text-emerald-400">"Aceptar y Abrir Reservas"</strong> para habilitar el calendario al cliente.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {providers.map(p => {
+                const providerMessages = chats[p.id] || [];
+                const lastMessage = providerMessages[providerMessages.length - 1];
+
+                return (
+                  <div
+                    key={p.id}
+                    className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={p.avatar}
+                        alt={p.name}
+                        className="w-12 h-12 rounded-xl object-cover border border-slate-700"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-white text-sm">{p.name}</h3>
+                          <span className="text-[11px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-400">{p.type}</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Último mensaje: <span className="text-slate-200 italic">"{lastMessage?.text}"</span>
+                        </p>
+                        <div className="mt-2">
+                          {p.bookingUnlocked ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                              <Unlock className="w-3 h-3" /> Cliente Autorizado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                              <Lock className="w-3 h-3" /> Agenda Bloqueada
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <button
+                        onClick={() => {
+                          setActiveProviderId(p.id);
+                          setModalTab('chat');
+                        }}
+                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white border border-slate-700"
+                      >
+                        Ver Chat
+                      </button>
+
+                      {!p.bookingUnlocked ? (
+                        <button
+                          onClick={() => handleUnlockClientBooking(p.id)}
+                          className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                        >
+                          <Unlock className="w-3.5 h-3.5" />
+                          Aceptar y Abrir Reservas
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            setProviders(prev =>
+                              prev.map(item =>
+                                item.id === p.id
+                                  ? { ...item, bookingUnlocked: false, requestStatus: 'none' }
+                                  : item
+                              )
+                            )
+                          }
+                          className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-rose-950/60 text-slate-400 text-xs font-semibold border border-slate-700"
+                        >
+                          Bloquear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </main>
+
+      {activeProvider && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+            <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={activeProvider.avatar}
+                  alt={activeProvider.name}
+                  className="w-11 h-11 rounded-xl object-cover border border-emerald-400"
+                />
+                <div>
+                  <h3 className="font-bold text-white text-sm sm:text-base flex items-center gap-1.5">
+                    {activeProvider.name}
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  </h3>
+                  <p className="text-xs text-slate-400">{activeProvider.type} · {activeProvider.distanceKm} km</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActiveProviderId(null)}
+                className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 bg-slate-950/60 border-b border-slate-800 p-1.5 gap-1.5">
+              <button
+                onClick={() => setModalTab('info')}
+                className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  modalTab === 'info' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Dumbbell className="w-3.5 h-3.5" />
+                Servicios
+              </button>
+
+              <button
+                onClick={() => setModalTab('chat')}
+                className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  modalTab === 'chat' ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Chat Previo
+              </button>
+
+              <button
+                onClick={() => setModalTab('booking')}
+                className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  modalTab === 'booking'
+                    ? 'bg-emerald-500 text-slate-950'
+                    : activeProvider.bookingUnlocked
+                    ? 'text-emerald-400 hover:bg-slate-800'
+                    : 'text-amber-400/80 hover:bg-slate-800'
+                }`}
+              >
+                {activeProvider.bookingUnlocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                Reservar Cita
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
+              {modalTab === 'info' && (
+                <div className="space-y-4">
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Sobre el profesional</span>
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">{activeProvider.bio}</p>
+                    <div className="pt-2 flex flex-wrap gap-1.5">
+                      {activeProvider.tags.map(t => (
+                        <span key={t} className="px-2.5 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-xs text-emerald-300 font-semibold">#{t}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Servicios y Tarifas</h4>
+                    {activeProvider.services.map(srv => (
+                      <div key={srv.id} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+                        <div>
+                          <h5 className="text-sm font-bold text-white">{srv.title}</h5>
+                          <span className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3" /> {srv.duration}</span>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm font-black text-emerald-400">{srv.price}</span>
+                          <button
+                            onClick={() => {
+                              setSelectedService(srv);
+                              setModalTab(activeProvider.bookingUnlocked ? 'booking' : 'chat');
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white border border-slate-700"
+                          >
+                            Elegir
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {modalTab === 'chat' && (
+                <div className="flex flex-col h-[380px]">
+                  <div className={`p-3 rounded-xl mb-3 flex items-center justify-between gap-3 border ${
+                    activeProvider.bookingUnlocked
+                      ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-200'
+                      : 'bg-amber-950/30 border-amber-500/30 text-amber-200'
+                  }`}>
+                    <div className="flex items-center gap-2 text-xs">
+                      {activeProvider.bookingUnlocked ? (
+                        <>
+                          <Unlock className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <span><strong>¡Acceso concedido!</strong> Agenda de reservas abierta.</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                          <span>Habla por chat. En cuanto el coach te acepte, podrás reservar.</span>
+                        </>
+                      )}
+                    </div>
+
+                    {!activeProvider.bookingUnlocked && (
+                      <button
+                        onClick={() => handleUnlockClientBooking(activeProvider.id)}
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[11px] font-black shrink-0"
+                      >
+                        Simular Aceptación
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto space-y-2.5 p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    {(chats[activeProvider.id] || []).map((msg, index) => (
+                      <div key={index} className={`flex ${msg.sender === 'client' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[82%] rounded-2xl px-3.5 py-2 text-xs sm:text-sm ${
+                          msg.isSystemUnlock
+                            ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-200'
+                            : msg.sender === 'client'
+                            ? 'bg-emerald-500 text-slate-950 font-medium'
+                            : 'bg-slate-800 text-slate-200'
+                        }`}>
+                          <p>{msg.text}</p>
+                          <span className={`text-[10px] block mt-1 ${msg.sender === 'client' ? 'text-slate-900/70' : 'text-slate-400'}`}>{msg.time}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <form onSubmit={handleSendMessage} className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Escribe tu mensaje..."
+                      className="flex-1 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none"
+                    />
+                    <button type="submit" className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shrink-0">
+                      <Send className="w-4 h-4" />
+                      Enviar
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {modalTab === 'booking' && (
+                <div>
+                  {!activeProvider.bookingUnlocked ? (
+                    <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-4">
+                      <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto">
+                        <Lock className="w-7 h-7 text-amber-400" />
+                      </div>
+                      <div className="space-y-1 max-w-md mx-auto">
+                        <h4 className="text-base font-black text-white">Agenda protegida</h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          Este profesional requiere validación previa por chat antes de mostrarte su disponibilidad horaria.
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 pt-2">
+                        <button
+                          onClick={() => setModalTab('chat')}
+                          className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black"
+                        >
+                          Ir al Chat
+                        </button>
+                        <button
+                          onClick={() => handleUnlockClientBooking(activeProvider.id)}
+                          className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold border border-slate-700"
+                        >
+                          Simular Desbloqueo
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-300">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>Perfil validado. Selecciona tu servicio y horario:</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block">1. Servicio</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          {activeProvider.services.map(srv => {
+                            const isSelected = selectedService?.id === srv.id;
+                            return (
+                              <button
+                                key={srv.id}
+                                onClick={() => setSelectedService(srv)}
+                                className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${
+                                  isSelected ? 'bg-emerald-500/15 border-emerald-400 text-white' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                                }`}
+                              >
+                                <div>
+                                  <div className="text-sm font-bold">{srv.title}</div>
+                                  <div className="text-xs text-slate-400">{srv.duration}</div>
+                                </div>
+                                <div className="text-sm font-black text-emerald-400">{srv.price}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block">2. Horario disponible</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {activeProvider.availableSlots.map(slot => {
+                            const isSelected = selectedSlot === slot;
+                            return (
+                              <button
+                                key={slot}
+                                onClick={() => setSelectedSlot(slot)}
+                                className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                                  isSelected ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'
+                                }`}
+                              >
+                                <Calendar className="w-3.5 h-3.5" />
+                                {slot}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {bookingSuccessBanner ? (
+                        <div className="p-4 rounded-xl bg-emerald-500 text-slate-950 font-black text-center text-sm flex items-center justify-center gap-2">
+                          <Check className="w-5 h-5 stroke-[3]" />
+                          ¡Reserva confirmada con éxito!
+                        </div>
+                      ) : (
+                        <button
+                          disabled={!selectedService || !selectedSlot}
+                          onClick={handleConfirmBooking}
+                          className={`w-full py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 ${
+                            selectedService && selectedSlot
+                              ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20'
+                              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          <Calendar className="w-4 h-4" />
+                          Confirmar Cita en Agenda
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
